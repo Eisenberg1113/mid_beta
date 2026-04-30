@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Profile Header -->
+    <div class="surface p-8 rounded-2xl mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold mb-2">내 프로필</h1>
+            <p class="text-xl text-cyan-400 font-bold">{{ profile.nickname }}</p>
+        </div>
+        <div class="text-right">
+            <p class="text-sm text-gray-400 mb-1">매너온도</p>
+            <p class="text-3xl font-black {% if profile.manner >= 36.5 %}text-indigo-400{% else %}text-red-400{% endif %}">
+                {{ profile.manner }}°C
+            </p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- History Section -->
+        <div class="surface p-6 rounded-2xl">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <span class="text-indigo-400">📅</span> 모임 이력
+            </h2>
+            <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                {% for member in past_meetings %}
+                <a href="{% url 'meeting_chat' member.meeting.id %}" class="block bg-gray-800 p-4 rounded-xl hover:bg-gray-700 transition border border-white/5 hover:-translate-y-1">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="bg-indigo-600/20 text-indigo-400 px-2 py-1 rounded text-xs font-bold">{{ member.meeting.category }}</span>
+                        <span class="text-xs text-gray-500">{{ member.joined_at|date:"Y.m.d" }}</span>
+                    </div>
+                    <p class="text-sm font-medium">{{ member.meeting.location.name }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ member.meeting.schedule|date:"n월 j일 A g:i" }}</p>
+                </a>
+                {% empty %}
+                <p class="text-gray-500 text-sm text-center py-4">아직 참여한 모임이 없습니다.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Favorites Section -->
+        <div class="surface p-6 rounded-2xl">
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <span class="text-cyan-400">⭐</span> 즐겨찾는 멤버
+            </h2>
+            <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                {% for favorite in favorites %}
+                <a href="{% url 'user_detail' favorite.user.id %}" class="flex justify-between items-center bg-gray-800 p-4 rounded-xl hover:bg-gray-700 transition border border-white/5 hover:-translate-y-1">
+                    <span class="font-medium">{{ favorite.nickname }}</span>
+                    <span class="text-sm {% if favorite.manner >= 36.5 %}text-indigo-400{% else %}text-red-400{% endif %} font-bold">{{ favorite.manner }}°C</span>
+                </a>
+                {% empty %}
+                <p class="text-gray-500 text-sm text-center py-4">즐겨찾는 멤버가 없습니다.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

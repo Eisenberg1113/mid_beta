@@ -1,0 +1,104 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    #map {
+        width: 100%;
+        height: 600px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+
+    .dashboard-container {
+        padding: 20px;
+    }
+
+    .stats-card {
+        background: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+</style>
+<script type="text/javascript"
+    src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_map_api_key }}&libraries=clusterer"></script>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h2>🗺️ 모임 밀집도 대시보드</h2>
+    <p>생성된 모든 모임의 위치를 마커 클러스터링으로 확인하여, 어느 지역에서 매칭이 활발한지 분석합니다.</p>
+
+    <div id="map"></div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var mapContainer = document.getElementById('map');
+
+        if (typeof kakao === 'undefined' || !kakao.maps || !kakao.maps.MarkerClusterer) {
+            mapContainer.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#666; background:#f9f9f9; border-radius:8px; border:1px solid #ddd; text-align:center; padding:20px;">' +
+                '<span style="font-size:30px; margin-bottom:10px;">🗺️</span>' +
+                '<p style="font-weight:bold; font-size:16px;">카카오맵 스크립트를 불러오지 못했습니다.</p>' +
+                '<p style="font-size:13px; margin-top:5px;">1. JavaScript 앱 키가 올바른지 확인하세요.<br>2. 카카오 디벨로퍼스에서 플랫폼 웹 도메인이 등록되었는지 확인하세요.</p>' +
+                '</div>';
+            return;
+        }
+
+        try {
+            var mapOption = {
+                center: new kakao.maps.LatLng(37.566826, 126.9786567), // 지도의 중심좌표
+                level: 8 // 지도의 확대 레벨
+            };
+
+            var map = new kakao.maps.Map(mapContainer, mapOption);
+
+            // 마커 클러스터러를 생성합니다 
+            var clusterer = new kakao.maps.MarkerClusterer({
+                map: map, // 마커들을 클러스터로 관리하고 표시할 지도 객체 
+                averageCenter: true, // 클러스터에 포함된 마커들의 평균 위치를 클러스터 마커 위치로 설정 
+                minLevel: 6 // 클러스터 할 최소 지도 레벨 
+            });
+
+            // 데이터를 가져와 마커를 생성합니다
+            var locations = {{ locations_json|safe }};
+            var markers = locations.map(function (loc) {
+        var marker = new kakao.maps.Marker({
+            position: new kakao.maps.LatLng(parseFloat(loc.lat), parseFloat(loc.lng)),
+            title: loc.title
+        });
+
+        var infowindow = new kakao.maps.InfoWindow({
+            content: '<div style="padding:5px;font-size:12px;">' + loc.title + '</div>'
+        });
+
+        kakao.maps.event.addListener(marker, 'mouseover', function () {
+            infowindow.open(map, marker);
+        });
+        kakao.maps.event.addListener(marker, 'mouseout', function () {
+            infowindow.close();
+        });
+
+        return marker;
+    });
+
+    clusterer.addMarkers(markers);
+
+    setTimeout(() => {
+        if (mapContainer.innerHTML === '') {
+            mapContainer.innerHTML = '<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#666; background:#f9f9f9; border-radius:8px; border:1px solid #ddd; text-align:center; padding:20px;">' +
+                '<span style="font-size:30px; margin-bottom:10px;">⚠️</span>' +
+                '<p style="font-weight:bold; font-size:16px;">지도 화면이 렌더링되지 않았습니다.</p>' +
+                '<p style="font-size:13px; margin-top:5px;">도메인이 카카오 디벨로퍼스에 등록되었는지 확인해주세요.</p>' +
+                '</div>';
+        }
+    }, 1000);
+    } catch (e) {
+        console.error(e);
+        mapContainer.innerHTML = '<div style="display:flex; align-items:center; justify-content:center; height:100%; color:red;">지도 초기화 중 오류가 발생했습니다.</div>';
+    }
+});
+</script>
+{% endblock %}

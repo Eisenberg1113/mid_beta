@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-xl mx-auto px-4 py-20">
+    <div class="surface p-8 rounded-2xl">
+        <div class="text-center mb-8">
+            <div class="text-4xl mb-4">🚨</div>
+            <h1 class="text-2xl font-bold mb-2">유저 신고하기</h1>
+            <p class="text-gray-400">
+                <span class="text-cyan-400 font-bold">{{ target_profile.nickname }}</span> 님의 어떤 점이 불편하셨나요?
+            </p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-3">신고 사유</label>
+                <div class="space-y-3">
+                    <label class="flex items-center gap-3 p-4 bg-gray-800 rounded-xl cursor-pointer border border-white/5 hover:bg-gray-700 transition">
+                        <input type="radio" name="reason" value="욕설/비하" class="text-indigo-500 focus:ring-indigo-500 bg-gray-900 border-gray-700" required>
+                        <span class="text-gray-200">욕설 및 비하 발언</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-4 bg-gray-800 rounded-xl cursor-pointer border border-white/5 hover:bg-gray-700 transition">
+                        <input type="radio" name="reason" value="노쇼" class="text-indigo-500 focus:ring-indigo-500 bg-gray-900 border-gray-700">
+                        <span class="text-gray-200">모임 노쇼 (No-show)</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-4 bg-gray-800 rounded-xl cursor-pointer border border-white/5 hover:bg-gray-700 transition">
+                        <input type="radio" name="reason" value="부적절한 만남 목적" class="text-indigo-500 focus:ring-indigo-500 bg-gray-900 border-gray-700">
+                        <span class="text-gray-200">부적절한 만남 목적</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-4 bg-gray-800 rounded-xl cursor-pointer border border-white/5 hover:bg-gray-700 transition">
+                        <input type="radio" name="reason" value="기타" class="text-indigo-500 focus:ring-indigo-500 bg-gray-900 border-gray-700">
+                        <span class="text-gray-200">기타 부적절한 행위</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex gap-4">
+                <a href="javascript:history.back()" class="flex-1 py-4 bg-gray-800 hover:bg-gray-700 rounded-xl text-center font-bold transition">
+                    취소
+                </a>
+                <button type="submit" class="flex-1 py-4 bg-red-600 hover:bg-red-700 rounded-xl text-white font-bold transition">
+                    신고 접수
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

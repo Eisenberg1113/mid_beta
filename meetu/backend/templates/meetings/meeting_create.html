@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <div class="surface p-8 rounded-2xl">
+        <h1 class="text-2xl font-bold mb-6">새 모임 만들기</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-3">모임 카테고리 선택</label>
+                <div class="grid grid-cols-2 gap-4">
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="category" value="운동" class="peer sr-only" required>
+                        <div class="surface p-4 rounded-xl text-center peer-checked:bg-indigo-600/20 peer-checked:border-indigo-500 peer-checked:text-indigo-400 transition">운동</div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="category" value="게임" class="peer sr-only">
+                        <div class="surface p-4 rounded-xl text-center peer-checked:bg-indigo-600/20 peer-checked:border-indigo-500 peer-checked:text-indigo-400 transition">게임</div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="category" value="스터디" class="peer sr-only">
+                        <div class="surface p-4 rounded-xl text-center peer-checked:bg-indigo-600/20 peer-checked:border-indigo-500 peer-checked:text-indigo-400 transition">스터디</div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="radio" name="category" value="식사" class="peer sr-only">
+                        <div class="surface p-4 rounded-xl text-center peer-checked:bg-indigo-600/20 peer-checked:border-indigo-500 peer-checked:text-indigo-400 transition">식사</div>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-3">모임 장소 선택</label>
+                <div id="map" style="width:100%;height:300px;" class="rounded-lg bg-gray-800 border border-white/10"></div>
+                <input type="hidden" id="lat" name="lat" required>
+                <input type="hidden" id="lng" name="lng" required>
+                <input type="hidden" id="place_name" name="place_name">
+                <div id="clickLatlng" class="text-sm text-gray-400 mt-2">지도를 클릭하여 장소를 선택하세요. (필수)</div>
+            </div>
+
+            <div class="mb-8">
+                <label class="block text-sm font-medium text-gray-300 mb-3">모임 일정 선택</label>
+                <input id="schedule-picker" name="schedule" class="surface w-full p-3 rounded-lg border border-white/10" placeholder="날짜와 시간을 선택하세요..." required>
+            </div>
+
+            <button type="submit" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-white font-bold text-lg btn-glow">
+                모임 개설하기
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/ko.js"></script>
+<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey={{ kakao_map_api_key }}&libraries=services"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Flatpickr Initializer
+        flatpickr("#schedule-picker", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            minDate: "today",
+            locale: "ko",
+        });
+
+        // Kakao Map Initializer
+        if ("{{ kakao_map_api_key }}") {
+            if (typeof kakao === 'undefined' || !kakao.maps || !kakao.maps.services) {
+                document.getElementById('map').innerHTML = '<div class="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center"><span class="text-3xl mb-2">🗺️</span><p class="font-bold">카카오맵 스크립트를 불러오지 못했습니다.</p><p class="text-sm mt-2 text-gray-500">1. JavaScript 앱 키가 올바른지 확인하세요.<br>2. 카카오 디벨로퍼스에서 플랫폼 웹 도메인(http://localhost)이 등록되었는지 확인하세요.</p></div>';
+                return;
+            }
+
+            try {
+                var mapContainer = document.getElementById('map'),
+                    mapOption = { 
+                        center: new kakao.maps.LatLng(37.566826, 126.9786567),
+                        level: 5
+                    };
+
+                var map = new kakao.maps.Map(mapContainer, mapOption);
+                var geocoder = new kakao.maps.services.Geocoder();
+                var marker = new kakao.maps.Marker({
+                    position: map.getCenter(),
+                    map: map
+                });
+
+                kakao.maps.event.addListener(map, 'click', function(mouseEvent) {        
+                    var latlng = mouseEvent.latLng; 
+                    marker.setPosition(latlng);
+                    
+                    document.getElementById('lat').value = latlng.getLat();
+                    document.getElementById('lng').value = latlng.getLng();
+
+                    searchDetailAddrFromCoords(latlng, function(result, status) {
+                        if (status === kakao.maps.services.Status.OK) {
+                            var detailAddr = !!result[0].road_address ? result[0].road_address.address_name : result[0].address.address_name;
+                            document.getElementById('clickLatlng').innerText = '선택된 위치: ' + detailAddr;
+                            document.getElementById('place_name').value = detailAddr;
+                        } else {
+                            document.getElementById('clickLatlng').innerText = '선택된 위치의 주소를 가져올 수 없습니다.';
+                            document.getElementById('place_name').value = "알 수 없는 위치";
+                        }
+                    });
+                });
+
+                function searchDetailAddrFromCoords(coords, callback) {
+                    geocoder.coord2Address(coords.getLng(), coords.getLat(), callback);
+                }
+                
+                // 도메인 미등록 등의 에러 발생 시 카카오맵은 빈 화면을 출력함.
+                // map이 제대로 렌더링되었는지 확인하기 위한 우회적인 체크 (tiles가 로드되는지)
+                setTimeout(() => {
+                    if (mapContainer.innerHTML === '') {
+                        mapContainer.innerHTML = '<div class="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center"><span class="text-3xl mb-2">⚠️</span><p class="font-bold">지도 화면이 렌더링되지 않았습니다.</p><p class="text-sm mt-2 text-gray-500">카카오 디벨로퍼스 > 내 애플리케이션 > 플랫폼에서<br>Web 사이트 도메인에 접속하신 URL(예: http://localhost)이 등록되어 있는지 확인해주세요.</p></div>';
+                    }
+                }, 1000);
+            } catch(e) {
+                console.error(e);
+                document.getElementById('map').innerHTML = '<div class="w-full h-full flex items-center justify-center text-red-400">지도 초기화 중 오류가 발생했습니다. 콘솔을 확인하세요.</div>';
+            }
+        } else {
+            document.getElementById('map').innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-500">Kakao Map API 키가 설정되지 않았습니다. (.env 확인)</div>';
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-20">
+    <div class="surface p-8 rounded-2xl text-center relative overflow-hidden">
+        <!-- Background decoration -->
+        <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-indigo-600/20 to-cyan-400/10"></div>
+        
+        <div class="relative z-10 pt-8">
+            <div class="w-24 h-24 bg-gray-800 rounded-full mx-auto border-4 border-gray-900 flex items-center justify-center text-4xl mb-4 shadow-xl">
+                👤
+            </div>
+            
+            <h1 class="text-2xl font-bold mb-1">{{ target_profile.nickname }}</h1>
+            
+            <div class="inline-block bg-gray-900/50 px-4 py-2 rounded-full mb-8 border border-white/5">
+                <span class="text-sm text-gray-400 mr-2">매너온도</span>
+                <span class="font-black {% if target_profile.manner >= 36.5 %}text-indigo-400{% else %}text-red-400{% endif %}">
+                    {{ target_profile.manner }}°C
+                </span>
+            </div>
+
+            {% if target_profile != request.user.userprofile %}
+            <div class="flex gap-4 justify-center">
+                <form action="{% url 'toggle_favorite' target_profile.user.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="px-6 py-3 rounded-xl font-bold transition-all {% if is_favorite %}bg-gray-700 hover:bg-gray-600 text-white{% else %}bg-indigo-600 hover:bg-indigo-700 text-white btn-glow{% endif %}">
+                        {% if is_favorite %}⭐ 즐겨찾기 해제{% else %}⭐ 즐겨찾기 추가{% endif %}
+                    </button>
+                </form>
+                
+                <a href="{% url 'submit_report' target_profile.user.id %}" class="px-6 py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-xl font-bold transition-colors">
+                    🚨 신고하기
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

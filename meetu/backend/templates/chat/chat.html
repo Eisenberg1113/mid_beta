@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto h-[calc(100vh-4rem)] flex flex-col p-4">
+    <!-- Chat Header -->
+    <div class="flex-shrink-0 pb-4 border-b border-white/10 flex justify-between items-start">
+        <div>
+            <h1 class="text-xl font-bold">모임 채팅: <span class="text-indigo-400">{{ meeting.category }}</span></h1>
+            <p class="text-sm text-gray-400">{{ meeting.location.name }} / {{ meeting.schedule|date:"n월 j일 A g:i" }}</p>
+        </div>
+        <div class="flex flex-col gap-2 items-end">
+            <h3 class="text-sm text-gray-300 font-bold mb-1">참여자 목록</h3>
+            <div class="flex flex-wrap gap-2 justify-end">
+                {% for member in members %}
+                <div class="flex items-center gap-2 bg-gray-800 px-3 py-1.5 rounded-lg border border-white/5">
+                    <a href="{% url 'user_detail' member.user.id %}" class="text-sm text-cyan-400 hover:text-cyan-300 transition-colors font-medium">{{ member.user.nickname }}</a>
+                    {% if member.user != request.user.userprofile %}
+                    <div class="flex gap-1 ml-2">
+                        <button onclick="evaluateUser({{ member.user.id }}, 'good')" class="text-xs bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 px-2 py-1 rounded transition-colors" title="매너 칭찬하기">👍</button>
+                        <button onclick="evaluateUser({{ member.user.id }}, 'bad')" class="text-xs bg-red-600/30 hover:bg-red-600/50 text-red-300 px-2 py-1 rounded transition-colors" title="매너 아쉬워요">👎</button>
+                        <a href="{% url 'submit_report' member.user.id %}" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded transition-colors" title="신고하기">🚨</a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Area -->
+    <div id="message-list" class="flex-grow overflow-y-auto py-4 space-y-6">
+        <!-- Messages will be rendered here by JavaScript -->
+    </div>
+
+    <!-- Message Input Form -->
+    <div class="flex-shrink-0 pt-4 border-t border-white/10">
+        <form id="chat-form" class="flex items-center gap-4">
+            <input type="text" id="message-input" class="surface w-full p-3 rounded-lg border-transparent focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="메시지를 입력하세요..." autocomplete="off" required>
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                전송
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const messageList = document.getElementById('message-list');
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    
+    const meetingId = {{ meeting.id }};
+    const apiEndpoint = `/api/meetings/${meetingId}/messages/`;
+    let lastMessageId = 0;
+
+    // 초기 메시지 렌더링
+    const initialMessages = {{ initial_messages_json|safe }};
+    initialMessages.forEach(addMessageToDOM);
+    scrollToBottom();
+
+    // Long Polling 시작
+    pollForNewMessages();
+
+    // 새 메시지 전송 처리
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const content = messageInput.value.trim();
+        if (content) {
+            sendMessage(content);
+            messageInput.value = '';
+        }
+    });
+
+    function addMessageToDOM(message) {
+        const messageWrapper = document.createElement('div');
+        const messageElement = document.createElement('div');
+        const sentAt = new Date(message.sent_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+        const alignment = message.is_mine ? 'justify-end' : 'justify-start';
+        const bgColor = message.is_mine ? 'bg-indigo-600' : 'surface';
+        const textColor = message.is_mine ? 'text-white' : 'text-gray-200';
+
+        messageWrapper.className = `flex ${alignment}`;
+        messageElement.className = `p-3 rounded-xl max-w-lg ${bgColor} ${textColor}`;
+        
+        messageElement.innerHTML = `
+            <div class="flex items-end gap-2">
+                <div>
+                    ${!message.is_mine ? `<div class="text-xs text-cyan-400 font-bold mb-1">${message.sender.nickname}</div>` : ''}
+                    <p class="text-base">${message.content}</p>
+                </div>
+                <div class="text-xs text-gray-500 flex-shrink-0">${sentAt}</div>
+            </div>
+        `;
+        messageWrapper.appendChild(messageElement);
+        messageList.appendChild(messageWrapper);
+
+        // 마지막 메시지 ID 업데이트
+        if (message.id > lastMessageId) {
+            lastMessageId = message.id;
+        }
+    }
+
+    function scrollToBottom() {
+        messageList.scrollTop = messageList.scrollHeight;
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    async function sendMessage(content) {
+        try {
+            await fetch(apiEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                },
+                body: JSON.stringify({ content: content })
+            });
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    }
+
+    async function pollForNewMessages() {
+        try {
+            const response = await fetch(`${apiEndpoint}?last_id=${lastMessageId}`);
+            if (response.status === 200) {
+                const newMessages = await response.json();
+                if (newMessages.length > 0) {
+                    newMessages.forEach(addMessageToDOM);
+                    scrollToBottom();
+                }
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+            // 에러 발생 시 잠시 후 다시 시도
+            setTimeout(pollForNewMessages, 5000);
+            return;
+        }
+        // 즉시 다음 폴링 시작
+        pollForNewMessages();
+    }
+});
+
+async function evaluateUser(userId, scoreType) {
+    if (!confirm(scoreType === 'good' ? '이 유저를 칭찬하시겠습니까?' : '이 유저의 매너가 아쉬웠나요?')) {
+        return;
+    }
+    
+    const csrftoken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+    
+    try {
+        const formData = new FormData();
+        formData.append('score_type', scoreType);
+        
+        const response = await fetch(`/meetings/{{ meeting.id }}/evaluate/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('평가가 완료되었습니다. 현재 매너온도: ' + data.new_manner + '도');
+        } else {
+            alert('오류: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error evaluating user:', error);
+        alert('평가 중 오류가 발생했습니다.');
+    }
+}
+</script>
+{% endblock %}

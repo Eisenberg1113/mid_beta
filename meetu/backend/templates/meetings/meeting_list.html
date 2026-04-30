@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold">모임 찾기</h1>
+        <a href="{% url 'meeting_create' %}" class="px-4 py-2 bg-indigo-600 rounded-md text-white font-medium hover:bg-indigo-700 transition">
+            새 모임 만들기
+        </a>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="flex gap-2 mb-8 flex-wrap">
+        <a href="{% url 'meeting_list' %}" class="px-4 py-1.5 rounded-full border border-white/10 {% if not current_category %}bg-white/10 text-white{% else %}text-gray-400 hover:text-white{% endif %}">전체</a>
+        <a href="?category=운동" class="px-4 py-1.5 rounded-full border border-white/10 {% if current_category == '운동' %}bg-white/10 text-white{% else %}text-gray-400 hover:text-white{% endif %}">운동</a>
+        <a href="?category=게임" class="px-4 py-1.5 rounded-full border border-white/10 {% if current_category == '게임' %}bg-white/10 text-white{% else %}text-gray-400 hover:text-white{% endif %}">게임</a>
+        <a href="?category=스터디" class="px-4 py-1.5 rounded-full border border-white/10 {% if current_category == '스터디' %}bg-white/10 text-white{% else %}text-gray-400 hover:text-white{% endif %}">스터디</a>
+        <a href="?category=식사" class="px-4 py-1.5 rounded-full border border-white/10 {% if current_category == '식사' %}bg-white/10 text-white{% else %}text-gray-400 hover:text-white{% endif %}">식사</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for meeting in meetings %}
+        <div class="surface p-6 rounded-xl flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-start mb-4">
+                    <span class="px-2 py-1 bg-indigo-500/20 text-indigo-300 text-xs rounded font-bold">{{ meeting.category }}</span>
+                    <span class="text-xs text-gray-500">{{ meeting.created_at|date:"m/d H:i" }}</span>
+                </div>
+                <h3 class="text-lg font-bold mb-1">호스트: {{ meeting.host.nickname }}</h3>
+                {% if meeting.location.name %}
+                <p class="text-sm text-cyan-400 mb-2">📍 {{ meeting.location.name }}</p>
+                {% endif %}
+                {% if meeting.schedule %}
+                <p class="text-sm text-gray-400 mb-2">🗓️ {{ meeting.schedule|date:"Y년 n월 j일 A g:i" }}</p>
+                {% endif %}
+                <p class="text-sm text-gray-400 mb-4">참여 인원: {{ meeting.members.count }} / {{ meeting.max_members }}</p>
+            </div>
+            <a href="{% url 'meeting_join' meeting.id %}" class="block text-center w-full py-2 bg-indigo-600 hover:bg-indigo-700 rounded text-sm font-medium transition">
+                참여하기
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-20 text-gray-500">
+            현재 개설된 모임이 없습니다.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
