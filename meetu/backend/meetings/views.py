@@ -18,15 +18,19 @@ def meeting_list(request):
 def meeting_create(request):
     if request.method == 'POST':
         category = request.POST.get('category')
+        title = request.POST.get('title')
+        description = request.POST.get('description', '')
         lat = request.POST.get('lat')
         lng = request.POST.get('lng')
         place_name = request.POST.get('place_name', '선택된 위치')
         schedule_str = request.POST.get('schedule')
 
-        if category in dict(Meeting.CATEGORY_CHOICES) and lat and lng and schedule_str:
+        if category in dict(Meeting.CATEGORY_CHOICES) and lat and lng and schedule_str and title:
             meeting = Meeting.objects.create(
                 host=request.user.userprofile,
                 category=category,
+                title=title,
+                description=description,
                 location={
                     'name': place_name,
                     'lat': lat,

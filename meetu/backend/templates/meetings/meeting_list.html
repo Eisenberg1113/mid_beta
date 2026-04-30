@@ -26,7 +26,11 @@
                     <span class="px-2 py-1 bg-indigo-500/20 text-indigo-300 text-xs rounded font-bold">{{ meeting.category }}</span>
                     <span class="text-xs text-gray-500">{{ meeting.created_at|date:"m/d H:i" }}</span>
                 </div>
-                <h3 class="text-lg font-bold mb-1">호스트: {{ meeting.host.nickname }}</h3>
+                <h3 class="text-xl font-bold mb-1 line-clamp-1">{{ meeting.title }}</h3>
+                <p class="text-gray-400 text-sm mb-3 line-clamp-2">{% if meeting.description %}{{ meeting.description }}{% else %}{{ meeting.host.nickname }}님이 개설한 모임입니다.{% endif %}</p>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xs px-2 py-1 bg-gray-800 rounded-full border border-white/10">👑 {{ meeting.host.nickname }}</span>
+                </div>
                 {% if meeting.location.name %}
                 <p class="text-sm text-cyan-400 mb-2">📍 {{ meeting.location.name }}</p>
                 {% endif %}

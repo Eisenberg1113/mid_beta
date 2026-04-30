@@ -6,8 +6,11 @@
     <!-- Chat Header -->
     <div class="flex-shrink-0 pb-4 border-b border-white/10 flex justify-between items-start">
         <div>
-            <h1 class="text-xl font-bold">모임 채팅: <span class="text-indigo-400">{{ meeting.category }}</span></h1>
-            <p class="text-sm text-gray-400">{{ meeting.location.name }} / {{ meeting.schedule|date:"n월 j일 A g:i" }}</p>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 text-xs rounded font-bold">{{ meeting.category }}</span>
+                <h1 class="text-xl font-bold">{{ meeting.title }}</h1>
+            </div>
+            <p class="text-sm text-gray-400">📍 {{ meeting.location.name }} / 🗓️ {{ meeting.schedule|date:"n월 j일 A g:i" }}</p>
         </div>
         <div class="flex flex-col gap-2 items-end">
             <h3 class="text-sm text-gray-300 font-bold mb-1">참여자 목록</h3>

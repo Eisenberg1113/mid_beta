@@ -29,7 +29,8 @@
                         <span class="bg-indigo-600/20 text-indigo-400 px-2 py-1 rounded text-xs font-bold">{{ member.meeting.category }}</span>
                         <span class="text-xs text-gray-500">{{ member.joined_at|date:"Y.m.d" }}</span>
                     </div>
-                    <p class="text-sm font-medium">{{ member.meeting.location.name }}</p>
+                    <p class="text-sm font-bold mb-1 line-clamp-1">{{ member.meeting.title }}</p>
+                    <p class="text-xs text-cyan-400">📍 {{ member.meeting.location.name }}</p>
                     <p class="text-xs text-gray-400 mt-1">{{ member.meeting.schedule|date:"n월 j일 A g:i" }}</p>
                 </a>
                 {% empty %}
